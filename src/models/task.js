@@ -13,6 +13,6 @@ const usertaskSchema = new mongoose.Schema(
   { collection: "task", versionKey: false }
 );
 
-const task = mongoose.model("task", usertaskSchema);
+const Task = mongoose.model("task", usertaskSchema);
 
-module.exports = task;
+module.exports = Task;

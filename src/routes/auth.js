@@ -30,7 +30,6 @@ router.post("/register", async (req, res) => {
 // Login
 router.post("/login", async (req, res) => {
   const user = await User.findOne({ email: req.body.email });
-  console.log("user : ", user);
 
   if (!user) {
     return res.status(404).json({ message: "Authentication failed" });
@@ -40,8 +39,6 @@ router.post("/login", async (req, res) => {
     req.body.password,
     user.password
   );
-
-  console.log("passwordMatched : ", passwordMatched);
 
   if (!passwordMatched) {
     return res.status(404).json({ message: "Authentication failed" });
@@ -60,25 +57,45 @@ router.post("/login", async (req, res) => {
 
 module.exports = router;
 
-// token
-router.get("/protected", (req, res) => {
-  const token = req.cookies.token;
-  if (!token) {
-    return res.status(404).json({ message: "No Token Provided" });
-  }
-
-  try {
-    const decoded = jwt.verify(token, process.env.SECRET_KEY);
-    res.status(200).json({ message: "User logged in!", user: decoded });
-  } catch (error) {
-    return res.status(500).json({ message: "unauthorized: Invalid Token" });
-  }
-});
-
 // Log out
 router.post("/logout", async (req, res) => {
   res.clearCookie("token");
   res.status(200).json({ message: "User logged out!" });
+});
+
+// profile
+router.get("/profile", (req, res) => {
+  const token = req.cookies.token;
+  if (!token) {
+    return res.status(404).json({ message: "No Token Provided" });
+  }
+  try {
+    const decoded = jwt.verify(token, process.env.SECRET_KEY);
+    res.status(200).json({ message: "User logged in!", user: decoded });
+  } catch (error) {
+    return res.status(500).json({ message: "User isn't logged in" });
+  }
+});
+
+// Update profile
+router.put("/updateProfile/:id", async (req, res) => {
+  try {
+    const updateData = { ...req.body };
+
+    if (updateData.password) {
+      updateData.password = await bcrypt.hash(updateData.password, 8);
+    }
+
+    const user = await User.findByIdAndUpdate(req.params.id, updateData, {
+      new: true,
+      runValidators: true,
+    });
+
+    res.status(200).json({ message: "User updated successfully", user });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: "Something went wrong!" });
+  }
 });
 
 module.exports = router;
